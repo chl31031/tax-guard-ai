@@ -10,7 +10,37 @@ export default function TaxForm() {
   const [selectedMainIssue, setSelectedMainIssue] = useState(""); 
   const [currentStep, setCurrentStep] = useState(""); 
   const [isManualBusiness, setIsManualBusiness] = useState(false);
-  const [selectedTaxType, setSelectedTaxType] = useState(""); // 3번 세목 선택 상태
+  const [selectedTaxType, setSelectedTaxType] = useState(""); 
+
+  // [수정 1] 파일 핸들러 (value 리셋 추가)
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    setAttachedFiles((prev) => [...prev, ...files]);
+    e.target.value = ""; // 동일 파일 재선택 가능하도록 리셋
+  };
+
+  const removeFile = (index) => {
+    setAttachedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // [수정 4] 제출 핸들러
+  const handleSubmit = async () => {
+    if (!formData.currentSituation) {
+      alert("상세 상황을 입력해주세요!");
+      return;
+    }
+    
+    const finalData = {
+      ...formData,
+      currentStep,
+      selectedMainIssue,
+      filesCount: attachedFiles.length,
+      // 여기에 추후 Firebase 전송 로직이 들어갑니다.
+    };
+    
+    console.log("제출될 데이터:", finalData);
+    alert("분석 요청이 접수되었습니다. (콘솔 확인)");
+  };
 
   const subProblemOptions = {
     "매출 누락 의심": ["현금 매출", "차명 계좌 사용", "배달앱 매출", "기타"],
@@ -18,15 +48,6 @@ export default function TaxForm() {
     "법인 자금 문제": ["대표이사 가지급금", "법인 카드 사적 사용", "자본금 가장납입", "기타"],
     "자금 출처 조사": ["부동산 취득 자금 부족", "고액 예금/주식 증가", "부채 상환 자금 출처", "기타"],
     "상속 재산 누락 의심": ["사전 증여 재산 누락", "현금, 예금 등 금융재산 누락", "차명 재산(부동산, 주식 등)", "기타"]
-  };
-
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    setAttachedFiles((prev) => [...prev, ...files]);
-  };
-
-  const removeFile = (index) => {
-    setAttachedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -52,7 +73,7 @@ export default function TaxForm() {
         </div>
       </section>
 
-      {/* 2. 주종목(업종) - 유지 (기타 입력 포함) */}
+      {/* 2. 주종목(업종) - [수정 2] 기타 입력값 캡처 추가 */}
       <section className="space-y-3">
         <div className="space-y-1">
           <label className="font-extrabold text-lg text-blue-900">주종목(업종)</label>
@@ -68,21 +89,26 @@ export default function TaxForm() {
           ))}
         </div>
         {isManualBusiness && (
-          <input type="text" placeholder="업종을 직접 입력해주세요." className="w-full p-3 border-2 border-purple-200 rounded-lg mt-2 text-gray-900 font-bold outline-none focus:border-purple-500" />
+          <input 
+            type="text" 
+            placeholder="업종을 직접 입력해주세요." 
+            className="w-full p-3 border-2 border-purple-200 rounded-lg mt-2 text-gray-900 font-bold outline-none focus:border-purple-500"
+            onChange={(e) => setFormData('businessType', e.target.value)} // 값 캡처
+          />
         )}
       </section>
 
-      {/* 3. 쟁점 세목 및 예산 추징액 - 수정 완료 */}
+      {/* 3. 쟁점 세목 및 예산 추징액 - [수정 3] 세목 및 금액 캡처 추가 */}
       <section className="space-y-3">
         <div className="space-y-1">
           <label className="font-extrabold text-lg text-blue-900">쟁점 세목 및 예산 추징액</label>
-          <p className="text-xs text-gray-600 font-bold">해당하는 세목을 선택한 후에 추징액을 작성해주세요.(기타를 선택할 시에 세목과 추징액을 둘 다 작성하여주세요.)</p>
+          <p className="text-xs text-gray-600 font-bold">해당하는 세목을 선택한 후에 추징액을 작성해주세요.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {["법인세/종합소득세", "부가가치세", "양도소득세", "상속세/증여세", "기타"].map(tax => (
             <button 
               key={tax} 
-              onClick={() => setSelectedTaxType(tax)}
+              onClick={() => { setSelectedTaxType(tax); setFormData('taxType', tax); }}
               className={`px-4 py-2 rounded-full text-sm font-black border-2 transition-all ${selectedTaxType === tax ? "bg-purple-600 text-white border-purple-700 shadow-md" : "bg-purple-100 text-purple-800 border-purple-200"}`}
             >
               {tax}
@@ -92,17 +118,27 @@ export default function TaxForm() {
         {selectedTaxType && (
           <div className="mt-3 space-y-2 animate-in fade-in slide-in-from-top-1">
             {selectedTaxType === "기타" && (
-              <input type="text" placeholder="세목을 입력해주세요." className="w-full p-3 border-2 border-purple-200 rounded-lg text-gray-900 font-bold outline-none focus:border-purple-500" />
+              <input 
+                type="text" 
+                placeholder="세목을 입력해주세요." 
+                className="w-full p-3 border-2 border-purple-200 rounded-lg text-gray-900 font-bold outline-none focus:border-purple-500"
+                onChange={(e) => setFormData('taxType', e.target.value)} // 기타 세목 캡처
+              />
             )}
             <div className="relative">
-              <input type="number" placeholder="예상 추징액을 입력해주세요." className="w-full p-3 border-2 border-purple-200 rounded-lg text-gray-900 font-bold outline-none focus:border-purple-500 pr-12" />
+              <input 
+                type="number" 
+                placeholder="예상 추징액을 입력해주세요." 
+                className="w-full p-3 border-2 border-purple-200 rounded-lg text-gray-900 font-bold outline-none focus:border-purple-500 pr-12"
+                onChange={(e) => setFormData('estimatedAmount', e.target.value)} // 금액 캡처
+              />
               <span className="absolute right-4 top-3.5 text-gray-600 font-bold">만원</span>
             </div>
           </div>
         )}
       </section>
 
-      {/* 4. 국세청 주요 지적 사항 - 유지 */}
+      {/* 4 & 5 섹션 - 유지 */}
       <section className="space-y-3">
         <div className="space-y-1">
           <label className="font-extrabold text-lg text-blue-900">국세청 주요 지적 사항</label>
@@ -118,7 +154,6 @@ export default function TaxForm() {
         </div>
       </section>
 
-      {/* 5. 세부 문제 선택 - 유지 */}
       <section className={`space-y-3 transition-all duration-300 ${selectedMainIssue ? "opacity-100" : "opacity-40"}`}>
         <div className="space-y-1">
           <label className="font-extrabold text-lg text-blue-900">세부 문제 선택</label>
@@ -134,7 +169,7 @@ export default function TaxForm() {
         </div>
       </section>
 
-      {/* 6. 상세 상황 설명(필수) - 유지 (예시 문구 포함) */}
+      {/* 6. 상세 상황 설명 - 유지 */}
       <section className="space-y-3">
         <div className="space-y-1">
           <label className="font-extrabold text-lg text-blue-900">상세 상황 설명(필수)</label>
@@ -147,7 +182,7 @@ export default function TaxForm() {
         />
       </section>
 
-      {/* 7. 파일 첨부 - 유지 (수정 없음) */}
+      {/* 7. 파일 첨부 - 유지 */}
       <section className="space-y-3">
         <div className="space-y-1">
           <label className="font-extrabold text-lg text-blue-900">파일 첨부(권장)</label>
@@ -171,9 +206,13 @@ export default function TaxForm() {
         )}
       </section>
 
+      {/* [수정 4] 버튼 클릭 핸들러 연결 */}
       <footer className="pt-10 space-y-4">
         <p className="text-center text-xs text-gray-500 font-bold">입력하신 모든 정보는 분석 후 즉시 파기 됩니다.</p>
-        <button className="w-full py-6 bg-blue-600 text-white font-black text-2xl rounded-xl shadow-2xl hover:bg-blue-700 transition-all active:scale-95">
+        <button 
+          onClick={handleSubmit}
+          className="w-full py-6 bg-blue-600 text-white font-black text-2xl rounded-xl shadow-2xl hover:bg-blue-700 transition-all active:scale-95"
+        >
           모의 세무조사 시작하기
         </button>
       </footer>
