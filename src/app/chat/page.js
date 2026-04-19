@@ -1,27 +1,31 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useChatStore } from "@/store/useChatStore";
 
 export default function ChatPage() {
   const { formData } = useChatStore();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-
+  const initialized = useRef(false);
   // 페이지 진입 시 사용자의 데이터를 바탕으로 AI의 첫 마디 생성
   useEffect(() => {
+    if (initalized.current)
+        initialized.current = true;
+        
     const initialMessage = {
       role: "assistant",
-      content: `조사관입니다. 제출하신 ${formData.businessType} 관련 자료를 검토 중입니다. 특히 ${formData.selectedIssue} 부분이 중점 조사 대상이 될 것 같군요. 구체적으로 어떤 대응 계획이 있으신지 말씀해 보시죠.`
+    content: `조사관입니다. 제출하신 ${formData.businessType} 관련 자료를 검토 중입니다. 특히 ${formData.selectedIssue} 부분이 중점 조사 대상이 될 것 같군요. 구체적으로 어떤 대응 계획이 있으신지 말씀해 보시죠.`
     };
     setMessages([initialMessage]);
   }, [formData]);
 
   const sendMessage = () => {
     if (!input) return;
-    
+  const trimmedInput = input.trim();
+   if (!trimmedInput) return;
     // 사용자 메시지 추가
-    const userMsg = { role: "user", content: input };
+    const userMsg = { role: "user", content: trimmedInput };
     setMessages((prev) => [...prev, userMsg]);
     
     // TODO: 여기에 OpenAI 또는 Gemini API 호출 로직 추가 예정
@@ -57,7 +61,7 @@ export default function ChatPage() {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
           placeholder="조사관에게 답변하기..."
           className="flex-1 p-3 bg-gray-100 rounded-xl outline-none text-gray-900 font-bold"
         />
