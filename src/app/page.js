@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useChatStore } from "@/store/useChatStore";
+import { useRouter } from "next/navigation";
 
 export default function TaxForm() {
   const { formData, setFormData } = useChatStore();
@@ -23,6 +24,7 @@ export default function TaxForm() {
     setAttachedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const router = useRouter();
   // [수정 4] 제출 핸들러
   const handleSubmit = async () => {
     if (!formData.currentSituation) {
@@ -38,9 +40,12 @@ export default function TaxForm() {
       // 여기에 추후 Firebase 전송 로직이 들어갑니다.
     };
     
-    console.log("제출될 데이터:", finalData);
-    alert("분석 요청이 접수되었습니다. (콘솔 확인)");
-  };
+    // 데이터 확인용 로그
+  console.log("분석 데이터 준비 완료:", formData);
+  
+  // 채팅 페이지로 이동
+  router.push("/chat");
+};
 
   const subProblemOptions = {
     "매출 누락 의심": ["현금 매출", "차명 계좌 사용", "배달앱 매출", "기타"],
